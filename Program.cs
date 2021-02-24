@@ -20,6 +20,7 @@ namespace MASBot
 			_client = new DiscordSocketClient();
 			_client.Ready += ReadyAsync;
 			_client.Log += Log;
+			_client.MessageReceived += MessageReceivedAsync;
 
 			var builder = new ConfigurationBuilder().SetBasePath(AppContext.BaseDirectory).AddJsonFile(path: "config.json");
 			_config = builder.Build();
@@ -34,7 +35,7 @@ namespace MASBot
 		}
 		private Task ReadyAsync()
 		{
-			Console.WriteLine($"Connected as -> [] :)");
+			Console.WriteLine($"Connected as -> [{_client.CurrentUser}] :)");
 			return Task.CompletedTask;
 		}
 
@@ -42,6 +43,17 @@ namespace MASBot
 		{
 			Console.WriteLine(msg.ToString());
 			return Task.CompletedTask;
+		}
+
+		private async Task MessageReceivedAsync(SocketMessage message)
+		{
+			if (message.Author.Id == _client.CurrentUser.Id)
+				return;
+
+			if (message.Content ==  $"{_config["Prefix"]}hello")
+			{
+				await message.Channel.SendMessageAsync("world!");
+			}
 		}
 	}
 }
