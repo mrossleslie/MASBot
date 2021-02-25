@@ -28,22 +28,21 @@ namespace MASBot
 
 		public async Task MainAsync()
 		{
-			using (var services = ConfigureServices())
-			{
-				var client = services.GetRequiredService<DiscordSocketClient>();
-				_client = client;
+			await using var services = ConfigureServices();
 
-				_client.Log += LogAsync;
-				_client.Ready += ReadyAsync;
-				services.GetRequiredService<CommandService>().Log += LogAsync;
+			var client = services.GetRequiredService<DiscordSocketClient>();
+			_client = client;
 
-				await client.LoginAsync(TokenType.Bot, _config["Token"]);
-				await client.StartAsync();
+			_client.Log += LogAsync;
+			_client.Ready += ReadyAsync;
+			services.GetRequiredService<CommandService>().Log += LogAsync;
 
-				await services.GetRequiredService<CommandHandler>().InitializeAsync();
+			await client.LoginAsync(TokenType.Bot, _config["Token"]);
+			await client.StartAsync();
 
-				await Task.Delay(-1);
-			}
+			await services.GetRequiredService<CommandHandler>().InitializeAsync();
+
+			await Task.Delay(-1);
 		}
 
 		private Task ReadyAsync()

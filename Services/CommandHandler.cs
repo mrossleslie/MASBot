@@ -45,9 +45,8 @@ namespace MASBot.Services
 			}
 
 			var argPos = 0;
-			var prefix = char.Parse(_config["Prefix"]);
 
-			if (!(message.HasMentionPrefix(_client.CurrentUser, ref argPos) || message.HasCharPrefix(prefix, ref argPos)))
+			if (!(message.HasMentionPrefix(_client.CurrentUser, ref argPos) || message.HasStringPrefix(_config["Prefix"], ref argPos)))
 			{
 				return;
 			}
