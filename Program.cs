@@ -1,60 +1,71 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Discord;
+using Discord.Commands;
 using Discord.WebSocket;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using MASBot.Services;
 
 namespace MASBot
 {
 	public class Program
 	{
-		private readonly DiscordSocketClient _client;
 		private readonly IConfiguration _config;
+		private DiscordSocketClient _client;
 
 		public static void Main(string[] args)
 			=> new Program().MainAsync().GetAwaiter().GetResult();
 
 		public Program()
 		{
-			_client = new DiscordSocketClient();
-			_client.Ready += ReadyAsync;
-			_client.Log += Log;
-			_client.MessageReceived += MessageReceivedAsync;
-
 			var builder = new ConfigurationBuilder()
 				.SetBasePath(AppContext.BaseDirectory)
 				.AddJsonFile(path: "config.json");
+
 			_config = builder.Build();
 		}
 
 		public async Task MainAsync()
 		{
-			await _client.LoginAsync(TokenType.Bot, _config["Token"]);
-			await _client.StartAsync();
+			using (var services = ConfigureServices())
+			{
+				var client = services.GetRequiredService<DiscordSocketClient>();
+				_client = client;
 
-			await Task.Delay(-1);
+				_client.Log += LogAsync;
+				_client.Ready += ReadyAsync;
+				services.GetRequiredService<CommandService>().Log += LogAsync;
+
+				await client.LoginAsync(TokenType.Bot, _config["Token"]);
+				await client.StartAsync();
+
+				await services.GetRequiredService<CommandHandler>().InitializeAsync();
+
+				await Task.Delay(-1);
+			}
 		}
+
 		private Task ReadyAsync()
 		{
 			Console.WriteLine($"Connected as -> [{_client.CurrentUser}] :)");
 			return Task.CompletedTask;
 		}
 
-		private static Task Log(LogMessage msg)
+		private static Task LogAsync(LogMessage msg)
 		{
 			Console.WriteLine(msg.ToString());
 			return Task.CompletedTask;
 		}
 
-		private async Task MessageReceivedAsync(SocketMessage message)
+		private ServiceProvider ConfigureServices()
 		{
-			if (message.Author.Id == _client.CurrentUser.Id)
-				return;
-
-			if (message.Content ==  $"{_config["Prefix"]}hello")
-			{
-				await message.Channel.SendMessageAsync("world!");
-			}
+			return new ServiceCollection()
+				.AddSingleton(_config)
+				.AddSingleton<DiscordSocketClient>()
+				.AddSingleton<CommandService>()
+				.AddSingleton<CommandHandler>()
+				.BuildServiceProvider();
 		}
 	}
 }
