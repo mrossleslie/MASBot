@@ -3,7 +3,6 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.WebSocket;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Configuration.Json;
 
 namespace MASBot
 {
@@ -22,7 +21,9 @@ namespace MASBot
 			_client.Log += Log;
 			_client.MessageReceived += MessageReceivedAsync;
 
-			var builder = new ConfigurationBuilder().SetBasePath(AppContext.BaseDirectory).AddJsonFile(path: "config.json");
+			var builder = new ConfigurationBuilder()
+				.SetBasePath(AppContext.BaseDirectory)
+				.AddJsonFile(path: "config.json");
 			_config = builder.Build();
 		}
 
@@ -39,7 +40,7 @@ namespace MASBot
 			return Task.CompletedTask;
 		}
 
-		private Task Log(LogMessage msg)
+		private static Task Log(LogMessage msg)
 		{
 			Console.WriteLine(msg.ToString());
 			return Task.CompletedTask;
